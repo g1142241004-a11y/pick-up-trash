@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDGs不塑永續-淨灘</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Beach wave keyframes */
+        @keyframes wave {
+            0% { transform: translateX(0) translateZ(0) scaleY(1); }
+            50% { transform: translateX(-25%) translateZ(0) scaleY(0.95); }
+            100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+        }
+        .wave-animation {
+            animation: wave 8s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite;
+        }
+        .wave-animation2 {
+            animation: wave 6s cubic-bezier(0.36, 0.45, 0.63, 0.53) infinite reverse;
+            opacity: 0.5;
+        }
+
+        /* 寫實擬真多層次雲朵風格 */
+        @keyframes driftCloud {
+            0% { transform: translateX(-250px); }
+            100% { transform: translateX(115vw); }
+        }
+        .cloud-realistic {
+            background: rgba(255, 255, 255, 0.85);
+            filter: blur(1px);
+            box-shadow: 
+                25px 10px 30px 5px rgba(255, 255, 255, 0.6),
+                -20px 15px 25px 2px rgba(240, 249, 255, 0.5),
+                10px -10px 20px 0px rgba(255, 255, 255, 0.9);
+            border-radius: 100px;
+        }
+        .cloud-1 { animation: driftCloud 45s linear infinite; }
+        .cloud-2 { animation: driftCloud 60s linear infinite; animation-delay: -18s; transform: scale(0.7); }
+        .cloud-3 { animation: driftCloud 50s linear infinite; animation-delay: -30s; transform: scale(1.2); }
+
+        @keyframes floatBoat {
+            0%, 100% { transform: translateY(0px) rotate(-1deg); }
+            50% { transform: translateY(-4px) rotate(1deg); }
+        }
+        .boat-animation {
+            animation: floatBoat 4s ease-in-out infinite;
+        }
+
+        /* 寫實燈塔燈光閃爍與光束效果 */
+        @keyframes beaconSweep {
+            0% { opacity: 0.1; transform: scaleX(0.7) rotate(-15deg); }
+            50% { opacity: 0.6; transform: scaleX(1.3) rotate(15deg); }
+            100% { opacity: 0.1; transform: scaleX(0.7) rotate(-15deg); }
+        }
+        .lighthouse-beam-effect {
+            animation: beaconSweep 3s ease-in-out infinite;
+            transform-origin: top center;
+        }
+
+        @keyframes blinkLight {
+            0%, 49% { opacity: 0.3; transform: scale(0.9); }
+            50%, 100% { opacity: 1; transform: scale(1.3); filter: drop-shadow(0 0 10px rgba(253, 224, 71, 0.9)); }
+        }
+        .lighthouse-light {
+            animation: blinkLight 1.5s ease-in-out infinite;
+        }
+
+        /* Trash pop animation */
+        @keyframes popOut {
+            0% { transform: scale(1) rotate(var(--rot)); opacity: 1; }
+            50% { transform: scale(1.3) rotate(var(--rot)); opacity: 0.8; }
+            100% { transform: scale(0) rotate(var(--rot)); opacity: 0; }
+        }
+        .trash-item {
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+        .trash-item:hover {
+            filter: brightness(1.15) drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            transform: scale(1.1) rotate(var(--rot)) !important;
+        }
+        .animate-pop {
+            animation: popOut 0.4s forwards ease-out;
+        }
+    </style>
+</head>
+<body class="overflow-hidden h-screen w-screen bg-sky-100 flex flex-col justify-between m-0 p-0">
+
+    <!-- 頁首區塊 -->
+    <header class="absolute top-0 left-0 w-full z-30 bg-white/80 backdrop-blur-md shadow-md px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl sm:text-3xl">🏖️</span>
+            <h1 class="text-xl sm:text-2xl font-black text-emerald-800 tracking-wide">SDGs不塑永續-淨灘</h1>
+        </div>
+        <div class="flex items-center space-x-4 sm:space-x-6 text-sm sm:text-lg font-bold text-slate-700">
+            <div class="bg-emerald-100 px-3 py-1.5 rounded-full shadow-inner flex items-center space-x-1">
+                <span>🏆 分數:</span>
+                <span id="scoreVal" class="text-emerald-700 font-extrabold">0</span>
+            </div>
+            <div class="bg-amber-100 px-3 py-1.5 rounded-full shadow-inner flex items-center space-x-1">
+                <span>🗑️ 剩餘垃圾:</span>
+                <span id="trashCountVal" class="text-amber-700 font-extrabold">50</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 遊戲海灘背景區塊 -->
+    <main id="gameContainer" class="relative w-full h-full overflow-hidden bg-gradient-to-b from-sky-400 via-sky-300 to-amber-100">
+        
+        <!-- 寫實擬真雲朵天空區塊 -->
+        <div class="absolute top-14 left-0 w-full h-[28%] pointer-events-none overflow-hidden z-10">
+            <!-- 擬真雲朵 1 -->
+            <div class="cloud-1 cloud-realistic absolute top-3 w-44 h-12 opacity-85">
+                <div class="absolute -top-4 left-6 w-16 h-16 bg-white/90 rounded-full blur-[2px]"></div>
+                <div class="absolute -top-7 left-16 w-20 h-20 bg-white/95 rounded-full blur-[3px]"></div>
+            </div>
+            <!-- 擬真雲朵 2 -->
+            <div class="cloud-2 cloud-realistic absolute top-12 w-64 h-16 opacity-75">
+                <div class="absolute -top-6 left-10 w-24 h-24 bg-white/90 rounded-full blur-[3px]"></div>
+                <div class="absolute -top-9 left-28 w-28 h-28 bg-white/95 rounded-full blur-[4px]"></div>
+            </div>
+            <!-- 擬真雲朵 3 -->
+            <div class="cloud-3 cloud-realistic absolute top-6 w-52 h-14 opacity-80">
+                <div class="absolute -top-5 left-12 w-20 h-20 bg-white/90 rounded-full blur-[2px]"></div>
+            </div>
+        </div>
+
+        <div class="absolute top-[20%] left-0 w-full h-[30%] bg-gradient-to-b from-sky-400 to-cyan-500 overflow-hidden z-10">
+            
+            <!-- 寫實燈塔元素 -->
+            <div class="absolute bottom-0 left-[6%] sm:left-[10%] flex flex-col items-center z-15">
+                <!-- 燈塔投射光束 -->
+                <div class="lighthouse-beam-effect absolute -top-16 -left-16 w-36 h-24 bg-gradient-to-t from-yellow-200/50 via-yellow-100/20 to-transparent pointer-events-none rounded-t-full"></div>
+                
+                <!-- 燈塔主體結構 (SVG 寫實造型) -->
+                <svg class="w-16 sm:w-20 h-32 sm:h-40 drop-shadow-lg" viewBox="0 0 100 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- 基座 -->
+                    <path d="M25 175 L75 175 L70 160 L30 160 Z" fill="#334155"/>
+                    <!-- 塔身 (紅白相間漸層圓柱感) -->
+                    <path d="M32 160 L40 40 L60 40 L68 160 Z" fill="url(#towerGradient)"/>
+                    <!-- 紅白環帶細節 -->
+                    <path d="M35.2 120 L40 40 L60 40 L64.8 120 Z" fill="#ef4444" opacity="0.9"/>
+                    <path d="M36 105 L64 105 L64.8 120 L35.2 120 Z" fill="#ffffff"/>
+                    <path d="M38.4 75 L61.6 75 L60 40 L40 40 Z" fill="#ffffff"/>
+                    
+                    <!-- 觀景台 -->
+                    <rect x="37" y="34" width="26" height="6" rx="2" fill="#1e293b"/>
+                    <path d="M37 40 L63 40 L60 34 L40 34 Z" fill="#475569"/>
+                    
+                    <!-- 燈室與閃爍頂燈 -->
+                    <rect x="42" y="16" width="16" height="18" rx="2" fill="#0f172a"/>
+                    <rect x="44" y="18" width="12" height="14" fill="#38bdf8" opacity="0.6"/>
+                    <circle cx="50" cy="25" r="4" class="lighthouse-light" fill="#fde047"/>
+                    
+                    <!-- 屋頂錐體 -->
+                    <path d="M50 4 L38 16 L62 16 Z" fill="#b91c1c"/>
+                    <circle cx="50" cy="3" r="2" fill="#ffffff"/>
+
+                    <!-- 漸層定義 -->
+                    <defs>
+                        <linearGradient id="towerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="40%" stop-color="#f8fafc"/>
+                            <stop offset="70%" stop-color="#cbd5e1"/>
+                            <stop offset="100%" stop-color="#94a3b8"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+
+            <!-- 海上航行小船隻 -->
+            <div class="boat-animation absolute bottom-4 right-[15%] sm:right-[25%] z-15 flex flex-col items-center">
+                <div class="text-3xl sm:text-4xl filter drop-shadow-md">🚢</div>
+                <div class="w-16 h-1 bg-sky-900/20 rounded-full blur-[1px] mt-0.5"></div>
+            </div>
+
+            <!-- 海浪滾動圖層 -->
+            <div class="absolute bottom-0 left-0 w-[200%] h-8 wave-animation opacity-75 bg-repeat-x z-20" style="background-image: radial-gradient(circle at 10px -5px, transparent 12px, #bae6fd 13px);"></div>
+            <div class="absolute bottom-2 left-0 w-[200%] h-6 wave-animation2 opacity-50 bg-repeat-x z-20" style="background-image: radial-gradient(circle at 15px -3px, transparent 10px, #7dd3fc 11px);"></div>
+        </div>
+
+        <!-- 金黃色沙灘主體 (下半部) -->
+        <div class="absolute top-[45%] left-0 w-full h-[55%] bg-gradient-to-b from-amber-100 via-amber-200 to-orange-200 border-t-8 border-amber-300/60 shadow-inner">
+            <!-- 沙灘細節裝飾 -->
+            <div class="absolute top-4 left-10 text-xl opacity-30">🐚</div>
+            <div class="absolute top-12 right-20 text-xl opacity-30">🦀</div>
+            <div class="absolute bottom-10 left-1/4 text-2xl opacity-20">🐾</div>
+            <div class="absolute top-1/2 right-1/3 text-xl opacity-30">⭐</div>
+        </div>
+
+        <!-- 垃圾動態生成容器 -->
+        <div id="trashLayer" class="absolute top-[48%] left-0 w-full h-[47%] pointer-events-auto z-25">
+            <!-- 垃圾由 JavaScript 動態生成於此 -->
+        </div>
+    </main>
+
+    <!-- 任務成功 / AI回饋 彈跳視窗 -->
+    <div id="victoryModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 transform transition-all scale-95 opacity-0 animate-in fade-in duration-300" id="modalContent">
+            <div class="text-center">
+                <div class="inline-block p-4 bg-emerald-100 rounded-full text-4xl mb-3 shadow-inner">🎉</div>
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-800 mb-1">任務成功！海灘恢復美麗！</h2>
+                <p class="text-slate-500 text-sm mb-4">您成功清除所有海洋垃圾，守護了海洋生態與永續發展！</p>
+                
+                <!-- 成績統計 -->
+                <div class="bg-slate-50 rounded-2xl p-4 mb-5 border border-slate-100 flex justify-around">
+                    <div>
+                        <div class="text-xs text-slate-400 font-semibold">最終得分</div>
+                        <div id="finalScore" class="text-2xl font-black text-emerald-600">0</div>
+                    </div>
+                    <div class="border-r border-slate-200"></div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-semibold">SDGs 永續成就</div>
+                        <div class="text-base font-bold text-cyan-600">Goal 14 海洋生態</div>
+                    </div>
+                </div>
+
+                <!-- AI 環保小幫手回饋區塊 -->
+                <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-4 text-left mb-6 shadow-sm">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <span class="text-lg">🤖</span>
+                        <h3 class="font-bold text-emerald-800 text-sm sm:text-base">AI 環保小幫手回饋</h3>
+                    </div>
+                    <p id="aiFeedbackText" class="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                        太棒了！減少塑膠垃圾對於保護海洋生物（SDG 14）至關重要。寶特瓶與塑膠袋在自然界需要數百年才能分解，透過源頭減量與重複使用（SDG 12 責任消費與生產），我們可以讓海灘永遠保持乾淨！
+                    </p>
+                </div>
+
+                <!-- 按鈕群組 -->
+                <div class="flex space-x-3">
+                    <button onclick="restartGame()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-4 rounded-xl transition shadow-md active:scale-95">
+                        🔄 重新開始
+                    </button>
+                    <button onclick="nextLevel()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg shadow-emerald-600/30 active:scale-95">
+                        🚀 前往下一關
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 遊戲互動 JavaScript 程式碼 -->
+    <script>
+        // 垃圾種類與屬性定義（包含體積、積分、Emoji與名稱）
+        const trashTypes = [
+            { type: 'bottle', name: '寶特瓶', emoji: '🍾', points: 10, size: 'text-2xl sm:text-3xl' },
+            { type: 'box', name: '紙類餐盒', emoji: '🥡', points: 15, size: 'text-3xl sm:text-4xl' },
+            { type: 'bag', name: '塑膠袋', emoji: '🛍️', points: 10, size: 'text-2xl sm:text-3xl' },
+            { type: 'foam', name: '保麗龍', emoji: '📦', points: 25, size: 'text-3xl sm:text-4xl' },
+            { type: 'cup', name: '飲料杯', emoji: '🥤', points: 15, size: 'text-2xl sm:text-3xl' },
+            { type: 'drift', name: '漂流瓶', emoji: '🧴', points: 20, size: 'text-3xl sm:text-4xl' }
+        ];
+
+        let score = 0;
+        let remainingTrash = 50;
+        const totalTrashCount = 50;
+
+        // 初始化遊戲與生成垃圾
+        function initGame() {
+            score = 0;
+            remainingTrash = totalTrashCount;
+            updateUI();
+            
+            const trashLayer = document.getElementById('trashLayer');
+            trashLayer.innerHTML = '';
+            
+            // 隱藏通關視窗
+            const modal = document.getElementById('victoryModal');
+            modal.classList.add('hidden');
+            const modalContent = document.getElementById('modalContent');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+
+            // 隨機生成 50 個垃圾
+            for (let i = 0; i < totalTrashCount; i++) {
+                const randomType = trashTypes[Math.floor(Math.random() * trashTypes.length)];
+                const trashEl = document.createElement('div');
+                
+                // 隨機旋轉角度 (-45度 到 +45度)
+                const rot = Math.floor(Math.random() * 90) - 45;
+                
+                // 隨機分佈位置：嚴格限制在網頁下半部範圍
+                const posX = Math.random() * 88 + 5; // 百分比
+                const posY = Math.random() * 80 + 5; // 百分比
+
+                trashEl.className = `trash-item absolute ${randomType.size} select-none transition-transform duration-150 drop-shadow-md`;
+                trashEl.style.left = `${posX}%`;
+                trashEl.style.top = `${posY}%`;
+                trashEl.style.setProperty('--rot', `${rot}deg`);
+                trashEl.style.transform = `rotate(${rot}deg)`;
+                trashEl.innerHTML = randomType.emoji;
+                
+                // 點擊事件：撿起垃圾
+                trashEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    collectTrash(trashEl, randomType.points);
+                });
+                
+                // 支援行動裝置觸控
+                trashEl.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    collectTrash(trashEl, randomType.points);
+                }, { passive: false });
+
+                trashLayer.appendChild(trashEl);
+            }
+        }
+
+        // 撿起垃圾邏輯
+        function collectTrash(element, points) {
+            if (element.classList.contains('animate-pop') || element.style.display === 'none') return;
+            
+            // 累計分數與減少剩餘垃圾數
+            score += points;
+            remainingTrash -= 1;
+            updateUI();
+
+            // 播放彈跳與淡出動畫
+            element.classList.add('animate-pop');
+            
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 400);
+
+            // 檢查是否全數撿完
+            if (remainingTrash <= 0) {
+                showVictoryModal();
+            }
+        }
+
+        // 更新頂部UI分數與剩餘數量
+        function updateUI() {
+            document.getElementById('scoreVal').innerText = score;
+            document.getElementById('trashCountVal').innerText = remainingTrash;
+        }
+
+        // 顯示過關與AI回饋視窗
+        function showVictoryModal() {
+            document.getElementById('finalScore').innerText = score;
+            
+            let aiText = `太棒了！您以優異的表現清除了所有海洋垃圾。這呼應了 SDGs 目標 14（保育海洋生態）與目標 12（促進永續消費與生產模式）。日常生活中減少使用一次性塑膠製品，做好垃圾分類，是守護地球藍色心臟的最佳行動！`;
+            if (score > 800) {
+                aiText = `🏆 太神啦！您是頂尖的環保小尖兵！不僅迅速完成淨灘，還獲得了極高的永續積分。感謝您對地球生態（SDG 14）與資源循環（SDG 12）的莫大貢獻，請繼續保持無塑好習慣！`;
+            }
+            document.getElementById('aiFeedbackText').innerText = aiText;
+
+            const modal = document.getElementById('victoryModal');
+            modal.classList.remove('hidden');
+            
+            setTimeout(() => {
+                const modalContent = document.getElementById('modalContent');
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        // 重新開始遊戲
+        function restartGame() {
+            initGame();
+        }
+
+        // 前往下一關
+        function nextLevel() {
+            initGame();
+        }
+
+        // 頁面載入完成後初始化遊戲
+        window.onload = function() {
+            initGame();
+        };
+    </script>
+</body>
+</html>
